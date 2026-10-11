@@ -32,7 +32,18 @@
     h1,h2,h3,p{margin-top:0}.hero h1{font-size:clamp(48px,7.5vw,104px);line-height:.9;letter-spacing:-.065em;margin:15px 0 22px;max-width:900px}.hero p{max-width:720px;font-size:clamp(17px,2vw,21px);line-height:1.6;color:#e1eef0}
     .hero-facts{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.fact{padding:9px 12px;border-radius:999px;background:rgba(7,26,36,.76);border:1px solid rgba(255,255,255,.22);font-size:13px}
     .mission-panel{display:grid;align-content:start;gap:14px;padding:22px}.mission-panel h2{font-size:28px;letter-spacing:-.035em;margin-bottom:2px}.mission-panel>p{color:var(--muted);line-height:1.55;margin-bottom:6px}
-    .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mode{min-height:94px;padding:15px;text-align:left;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.045);color:var(--white);cursor:pointer;transition:.2s}.mode:hover{border-color:var(--mint);transform:translateY(-2px);background:rgba(108,240,190,.08)}.mode strong{display:block;font-size:24px}.mode span{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+    .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mode{min-height:94px;padding:15px;text-align:left;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.045);color:var(--white);cursor:pointer;transition:.2s}.mode:hover{border-color:var(--mint);transform:translateY(-2px);background:rgba(108,240,190,.08)}.mode strong{display:block;font-size:24px}.mode span{display:block;margin-top:4px;color:var(--muted);font-size:13px;line-height:1.4}
+    .mode[aria-pressed="true"]{background:rgba(108,240,190,.14);border:2px solid var(--mint);padding:14px;box-shadow:inset 0 0 0 1px rgba(108,240,190,.16)}
+    .mode[aria-pressed="true"] strong{color:var(--mint)}
+    .mode-label{font-size:12px;font-weight:800;color:var(--mint);display:block;margin-top:7px}
+    .mission-start-guide{padding:14px 16px;border:1px solid rgba(108,240,190,.34);border-radius:15px;background:rgba(108,240,190,.075)}
+    .mission-start-guide strong{display:block;color:var(--mint);letter-spacing:.07em;font-size:13px;margin-bottom:7px}
+    .mission-start-guide p{font-size:15px;color:#eaf3f4;line-height:1.6;margin:0}
+    .mission-start-actions{display:grid;gap:8px}
+    .start-mission-btn{display:block;width:100%;min-height:59px;font-size:19px;border-radius:15px;box-shadow:0 10px 27px rgba(108,240,190,.17)}
+    .start-mission-btn:hover{background:#a5ffd7;transform:translateY(-1px)}
+    .selected-mode-hint{font-size:14px;color:#d8eaeb;line-height:1.5;text-align:center;margin:0}
+    
     .resume{display:none;padding:15px;border:1px solid rgba(255,198,92,.5);border-radius:16px;background:rgba(255,198,92,.08)}.resume.show{display:block}.resume strong{display:block}.resume p{margin:4px 0 12px;color:#dce7e8;font-size:13px}
     .how{display:grid;gap:9px;margin-top:2px}.how-item{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;padding:12px;border-radius:14px;background:rgba(255,255,255,.035)}.how-item b{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--mint);color:var(--ink)}.how-item strong{display:block;font-size:14px}.how-item span{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin-top:2px}
     .notice{padding:12px 14px;border-left:3px solid var(--amber);background:rgba(255,198,92,.07);color:#dfe8e8;font-size:12px;line-height:1.5}
@@ -73,10 +84,15 @@
         </article>
         <aside class="card mission-panel">
           <div class="kicker">Select a mission</div>
-          <h2>How much pressure do you want?</h2>
-          <p>Difficulty progresses from essential concepts to decisions involving incomplete data and realistic constraints.</p>
+          <h2>Choose your mission length</h2>
+          <p>First choose how many decisions you want to make. Then press the Start mission button below. For your first game, we recommend the 5-decision briefing.</p>
           <div id="resumeCard" class="resume"><strong>Mission in progress</strong><p id="resumeText"></p><button id="resumeBtn" class="btn btn-secondary">Continue mission</button></div>
-          <div class="mode-grid" id="modeGrid"></div>
+          <div class="mission-start-guide"><strong>HOW TO START</strong><p>Select one of the four mission lengths, then press the green button. You'll read a scenario, choose one of four responses and confirm your decision. You have 30 seconds per decision; afterward you'll see the explanation before moving on.</p></div>
+          <div class="mode-grid" id="modeGrid" role="group" aria-label="Choose the number of decisions"></div>
+          <div class="mission-start-actions">
+            <button id="startMissionBtn" type="button" class="btn btn-primary start-mission-btn">Start mission · 5 decisions →</button>
+            <p id="selectedModeHint" class="selected-mode-hint" role="status" aria-live="polite">5 decisions selected. Press Start mission to begin.</p>
+          </div>
           <div class="how">
             <div class="how-item"><b>1</b><div><strong>Read the incident</strong><span>Review the context and operational constraint.</span></div></div>
             <div class="how-item"><b>2</b><div><strong>Choose and confirm</strong><span>You can change your option before locking it in.</span></div></div>
@@ -178,7 +194,36 @@ function shuffle(a){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.fl
 function buildPool(n){const tiers=[QUESTIONS.slice(0,6),QUESTIONS.slice(6,18),QUESTIONS.slice(18)];const counts=n===5?[2,2,1]:n===10?[3,4,3]:n===20?[5,8,7]:[6,12,12];return counts.flatMap((c,i)=>shuffle(tiers[i]).slice(0,c))}
 function show(screen){screens.forEach(s=>s.classList.toggle("active",s===screen));scrollTo({top:0,behavior:"smooth"})}
 function updateHud(){const answered=state.index+(state.answered?1:0);$("hudScore").textContent=state.score;$("hudStreak").textContent=state.streak;$("hudAccuracy").textContent=answered?Math.round(state.correct/answered*100)+"%":"—";$("sideScore").textContent=state.score;$("sideCorrect").textContent=state.correct}
-function buildModes(){const grid=$("modeGrid");MODES.forEach(m=>{const b=document.createElement("button");b.className="mode";b.innerHTML=`<strong>${m.n}</strong><span>${m.name}<br>${m.desc}</span>`;b.addEventListener("click",()=>start(m.n));grid.appendChild(b)})}
+let selectedMode=5;
+function selectMode(n){
+  selectedMode=n;
+  document.querySelectorAll("#modeGrid .mode").forEach(b=>{
+    const selected=Number(b.dataset.decisions)===n;
+    b.classList.toggle("selected",selected);
+    b.setAttribute("aria-pressed",selected?"true":"false");
+    const label=b.querySelector(".mode-label");
+    if(label)label.textContent=selected?"✓ Selected":"";
+  });
+  $("startMissionBtn").textContent=`Start mission · ${n} decisions →`;
+  $("selectedModeHint").textContent=`You've chosen ${n} decisions. Press Start mission to begin.`;
+}
+function buildModes(){
+  const grid=$("modeGrid");
+  MODES.forEach(m=>{
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="mode";
+    b.dataset.decisions=String(m.n);
+    b.innerHTML=`<strong>${m.n}</strong><span>${m.name}<br>${m.desc}</span><span class="mode-label"></span>`;
+    b.addEventListener("click",()=>selectMode(m.n));
+    grid.appendChild(b);
+  });
+  selectMode(5);
+  $("startMissionBtn").addEventListener("click",()=>{
+    if($("resumeCard").classList.contains("show")&&!window.confirm("Starting a new mission will replace the saved mission in progress. Continue?"))return;
+    start(selectedMode);
+  });
+}
 function save(){const resumeIndex=state.index+(state.answered?1:0);if(!state.pool.length||resumeIndex>=state.pool.length){localStorage.removeItem("scrMission");return}localStorage.setItem("scrMission",JSON.stringify({mode:state.mode,pool:state.pool.map(q=>q.id),index:resumeIndex,score:state.score,correct:state.correct,streak:state.streak,maxStreak:state.maxStreak,triageUsed:state.triageUsed,times:state.times,areas:state.areas}))}
 function loadSaved(){try{const s=JSON.parse(localStorage.getItem("scrMission"));if(!s||!Array.isArray(s.pool)||s.index>=s.pool.length)return;$("resumeCard").classList.add("show");$("resumeText").textContent=`Incident ${s.index+1} of ${s.pool.length} · ${s.correct} correct · ${s.score} points`;$("resumeBtn").onclick=()=>{Object.assign(state,s,{pool:s.pool.map(id=>QUESTIONS.find(q=>q.id===id)).filter(Boolean),selected:null,answered:false,time:30,timer:null,paused:false});show($("gameScreen"));updateHud();render()}}catch(e){localStorage.removeItem("scrMission")}}
 function start(n){clearInterval(state.timer);Object.assign(state,{mode:n,pool:buildPool(n),index:0,selected:null,answered:false,score:0,correct:0,streak:0,maxStreak:0,time:30,timer:null,paused:false,triageUsed:false,times:[],areas:{}});show($("gameScreen"));updateHud();render()}
